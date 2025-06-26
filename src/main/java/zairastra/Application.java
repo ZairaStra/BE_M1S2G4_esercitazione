@@ -5,7 +5,11 @@ import zairastra.entities.Order;
 import zairastra.entities.Product;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 public class Application {
 
@@ -33,9 +37,12 @@ public class Application {
         Order secondOrder = new Order(32645748, "ready for shipping", LocalDate.of(2021, 3, 25), LocalDate.of(2021, 3, 27), List.of(products1.get(0), products1.get(5), products1.getFirst()), firstCustomer);
         Order thirdOrder = new Order(3264718, "shipped", LocalDate.of(2021, 3, 28), LocalDate.of(2021, 4, 1), List.of(products1.get(4), products1.get(2), products1.getFirst(), products1.get(7)), fifthCustomer);
         Order fourthOrder = new Order(32642413, "shipped", LocalDate.of(2021, 3, 29), LocalDate.of(2021, 4, 4), List.of(products1.get(5), products1.get(6), products1.getFirst(), products1.get(2)), secondCustomer);
+        Order sixthOrder = new Order(2264838, "deliverd", LocalDate.of(2021, 1, 28), LocalDate.of(2021, 2, 4), List.of(products1.get(2), products1.get(6), products1.get(0), products1.getLast()), secondCustomer);
+        Order seventhOrder = new Order(22644545, "deliverd", LocalDate.of(2021, 2, 14), LocalDate.of(2021, 2, 17), List.of(products1.get(4), products1.get(5), products1.get(0)), fourthCustomer);
+        Order fifthOrder = new Order(21264718, "delivered", LocalDate.of(2021, 1, 25), LocalDate.of(2021, 1, 28), List.of(products1.get(3), products1.get(6), products1.getLast(), products1.get(0)), fifthCustomer);
 
         //insereisco gli ordini in una lista da usare per verificare la categoria
-        List<Order> orders = List.of(firstOrder, secondOrder, thirdOrder, fourthOrder);
+        List<Order> orders = List.of(firstOrder, secondOrder, thirdOrder, fourthOrder, fifthOrder, sixthOrder, seventhOrder);
 
         //es1 - lista da stream
         List<Product> expBooks = products1.stream()
@@ -79,5 +86,49 @@ public class Application {
         productsOrderedCustomer2.forEach(product ->
                 System.out.println(product.getName())
         );
+
+        //es1 bis - lista di ordini per cliente
+        Map<String, List<Order>> ordersByUser = orders.stream()
+                .collect(Collectors.groupingBy(order -> order.getCustomer().getName()));
+
+        System.out.println("Ordini per cliente: ");
+        ordersByUser.forEach((name, orderList) -> {
+            System.out.println(name + " ha fatto i seguenti ordini:");
+            //mi serve un secondo forEach per ciclare la lista degli ordini per utente
+            orderList.forEach(order -> System.out.println(order.getId()));
+        });
+
+        //es.2 bis - calcolo singole vendite per cliente e sommo la spesa totale
+//        Map<String, Double> purchasesPerUser = orders.stream()
+//                .collect(Collectors.groupingBy(order ->order.getCustomer().getName())),
+//                //ottengo i nomi de clienti dalla lista degli ordini, ma poi come raggiungo il costo del singolo prodotto del singolo ordine?
+        //PUOI FARLO COL FLATMAP
+//                .collect(Collectors.summingDouble(order -> order.getProduct().getPrice()))
+
+        //es.3 bis - ordino i prodotti dal più costoso al meno costoso
+        List<Product> sortByPrice = products1.stream()
+                .sorted(Comparator.comparing(Product::getPrice).reversed())
+                .toList();
+
+        sortByPrice.forEach(product -> System.out.println(product.getName() + ": " + product.getPrice() + " €"));
+
+
+        //es.4 bis - calcolo la media del costo del singolo ordine
+
+        List<OptionalDouble> averagePerOrder = orders.stream()
+                .map(order -> order.getProducts().stream()
+                        .mapToDouble(Product::getPrice)
+                        .average())
+                .toList();
+
+        for (int i = 0; i < orders.size(); i++) {
+            OptionalDouble avg = averagePerOrder.get(i);
+            if (avg.isPresent()) {
+                //non mi ricordo come si va a capo in tutti i sistemi?????
+                System.out.println(orders.get(i).getId() + ", " + avg.getAsDouble() + " € \n");
+            } else {
+                System.out.println(orders.get(i).getId() + " vuoto");
+            }
+        }
     }
 }
